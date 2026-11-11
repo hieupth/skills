@@ -45,6 +45,13 @@ while [[ $# -gt 0 ]]; do
     shift
 done
 
+# Git Bash on Windows must use real symbolic links for installation.
+if [[ "$ACTION" == "install" && -n "${MSYSTEM:-}" && "${MSYS:-}" != *winsymlinks:nativestrict* ]]; then
+    echo "error: Git Bash requires native symlink mode." >&2
+    echo "Run: MSYS=winsymlinks:nativestrict bash codex.sh install" >&2
+    exit 1
+fi
+
 if [[ -n "$PROJECT_DIR" ]]; then
     TARGET_DIR="$PROJECT_DIR/.agents/skills"
 else
