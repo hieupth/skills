@@ -15,7 +15,7 @@ Rate complexity and impact: low / medium / high.
 
 - Run distinct frames. A frame is a vantage point, not a label: decompose (first-principles), attack (adversarial, pre-mortem), borrow (analogical, outside view), invert (how would this fail for sure), extend in time (second-order effects) — plus whatever the domain adds. The menu is a floor, not a ceiling.
 - Two frames that cannot disagree are one frame; reframe or drop.
-- High + irreversible → MUST run ≥3 frames, independent until synthesis. Reversible → SHOULD is enough.
+- High + irreversible → MUST run ≥ 3 frames, independent until synthesis. Reversible → SHOULD is enough.
 - Frames disagree → one fresh attempt from scratch is worth its cost. Re-run; do not average.
 - Stop only when no further frame — tried or imagined — would surface a new risk, constraint, or simplification → synthesize.
 
@@ -57,6 +57,34 @@ For multi-step tasks, state a brief plan:
 3. [Step] → verify: [check]
 ```
 Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
+
+## 2A. EXECUTE IN WAVES
+**Plan first. Parallelize the critical path. Red-team every wave.**
+
+Plan each task before its first execution step. One line is enough for an atomic low + low task.
+
+The wave protocol below applies at the coordinating-agent boundary for every task with more than one executable step, in normal mode and plan mode. Mode controls what may be changed, not whether the protocol applies. In plan mode, run read-only planning and validation waves; leave state-changing waves planned, not executed, until authorized.
+
+When the wave protocol applies, its gate is mandatory. Simplicity shrinks jobs and checks; it never skips the gate.
+
+The coordinating agent owns the wave loop. Only it may spawn or dispatch agents for this protocol; delegated agents MUST NOT spawn subagents. Implementation and test agents execute only their assigned contracts and report evidence; they do not open nested wave loops. The red-team agent owns only the current wave's test design and job partition; the coordinating agent performs dispatch.
+
+Before acting:
+
+- Map the steps, dependencies, success checks, and critical path.
+- Group every currently unblocked, independent step into the same job wave. Use parallel agents up to available concurrency; serialize only true dependencies. Optimize elapsed time, not agent count.
+- Give each job one owner and an explicit input, output, scope, and verification. Jobs that can touch the same file or mutable state are not independent unless isolated.
+
+After each wave:
+
+1. Wait for every job in the wave. Collect its output and evidence; partial results do not pass.
+2. Give a fresh red-team agent the wave plan, outputs or diff, and success criteria. It MUST attack the whole wave, design the checks, split them into the smallest meaningful independent test jobs with explicit assignments, and return the dispatch plan. It does not defend the implementation.
+3. The coordinating agent dispatches those jobs to parallel test agents up to available concurrency and gathers their evidence. Include cross-job and integration checks, not just each job's local test. If only one meaningful check exists, the red-team agent states why it cannot be parallelized.
+4. Merge every issue from every coordinating, implementation, red-team, and test agent into one wave ledger. Deduplicate reports, never evidence; preserve severity, owner, and reproduction.
+5. Any issue → do not advance. Re-plan from the full ledger: update assumptions, dependencies, steps, and success checks; run the repair as a new wave under this same protocol.
+6. No issue → mark the wave verified and start the next dependency-ready wave. The final wave passes through the same gate.
+
+The test: every multi-step task has a dependency-ordered wave plan; every wave has complete outputs, an independent red-team test plan, parallel verification where meaningful, one combined issue ledger, and no unresolved issue before progress.
 
 ## 3. SIMPLICITY FIRST
 **Produce the minimum that solves the problem. Nothing speculative.**
