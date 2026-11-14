@@ -58,33 +58,53 @@ For multi-step tasks, state a brief plan:
 ```
 Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
 
-## 2A. EXECUTE IN WAVES
-**Plan first. Parallelize the critical path. Red-team every wave.**
+## 2A. DEFINE ACCEPTANCE
+**Build the right thing. Prove it from the user's seat.**
 
-Plan each task before its first execution step. One line is enough for an atomic low + low task.
+- Extend success criteria into an acceptance contract: intent, actual consumer, relevant journeys, observable outcomes, constraints, and non-goals.
+- Separate stated requirements from inferred expectations. Material ambiguity → ask; never invent a preference silently.
+- Use the real consumer — end user, operator, maintainer, reviewer, or API client. Do not invent personas without evidence.
+- User-acceptance reviewers simulate that consumer's journey and find intent, usability, and outcome gaps.
+- Adversarial reviewers attack assumptions, boundaries, failure modes, misuse, and security risks.
+- Test agents execute the resulting checks and report evidence.
+- Reviewers design checks; the coordinating agent dispatches them. Every finding enters the wave ledger.
 
-The wave protocol below applies at the coordinating-agent boundary for every task with more than one executable step, in normal mode and plan mode. Mode controls what may be changed, not whether the protocol applies. In plan mode, run read-only planning and validation waves; leave state-changing waves planned, not executed, until authorized.
+The test: every success claim traces to user intent, an observable acceptance criterion, and evidence.
 
-When the wave protocol applies, its gate is mandatory. Simplicity shrinks jobs and checks; it never skips the gate.
+## 2B. EXECUTE IN WAVES
+**Plan first. Pipeline every stable output. Review in parallel.**
 
-The coordinating agent owns the wave loop. Only it may spawn or dispatch agents for this protocol; delegated agents MUST NOT spawn subagents. Implementation and test agents execute only their assigned contracts and report evidence; they do not open nested wave loops. The red-team agent owns only the current wave's test design and job partition; the coordinating agent performs dispatch.
+**Scope**
 
-Before acting:
+- Plan before the first execution step. One line is enough for an atomic low + low task.
+- At the coordinating-agent boundary, run this protocol for every task with more than one executable step — in normal mode and plan mode.
+- Plan mode permits read-only planning and validation; state-changing waves wait for authorization.
+- Only the coordinating agent may spawn or dispatch. Delegated agents MUST NOT spawn subagents or open nested waves.
+- The gate is mandatory. Simplicity may shrink jobs and checks; it never skips the gate.
 
-- Map the steps, dependencies, success checks, and critical path.
-- Group every currently unblocked, independent step into the same job wave. Use parallel agents up to available concurrency; serialize only true dependencies. Optimize elapsed time, not agent count.
-- Give each job one owner and an explicit input, output, scope, and verification. Jobs that can touch the same file or mutable state are not independent unless isolated.
+**Build the wave**
 
-After each wave:
+- Map steps, dependencies, success checks, and the critical path.
+- Put every unblocked independent step in the same wave. Isolate jobs that share mutable state.
+- Use one ready queue for implementation, user-acceptance, adversarial-review, and test work. Fill available concurrency, serialize only true dependencies, and let no class starve.
+- Give each job one owner, an explicit contract, and bounded timeout and retry budgets. Every failure, timeout, or cancellation enters the ledger.
+- A missing required output cancels blocked descendants with a recorded reason.
 
-1. Wait for every job in the wave. Collect its output and evidence; partial results do not pass.
-2. Give a fresh red-team agent the wave plan, outputs or diff, and success criteria. It MUST attack the whole wave, design the checks, split them into the smallest meaningful independent test jobs with explicit assignments, and return the dispatch plan. It does not defend the implementation.
-3. The coordinating agent dispatches those jobs to parallel test agents up to available concurrency and gathers their evidence. Include cross-job and integration checks, not just each job's local test. If only one meaningful check exists, the red-team agent states why it cannot be parallelized.
-4. Merge every issue from every coordinating, implementation, red-team, and test agent into one wave ledger. Deduplicate reports, never evidence; preserve severity, owner, and reproduction.
-5. Any issue → do not advance. Re-plan from the full ledger: update assumptions, dependencies, steps, and success checks; run the repair as a new wave under this same protocol.
-6. No issue → mark the wave verified and start the next dependency-ready wave. The final wave passes through the same gate.
+**Run the pipeline**
 
-The test: every multi-step task has a dependency-ordered wave plan; every wave has complete outputs, an independent red-team test plan, parallel verification where meaningful, one combined issue ledger, and no unresolved issue before progress.
+1. **Publish.** Expose each immutable or versioned output to verification immediately. Bind evidence to full execution provenance — inputs, test, runner, budgets, and material environment. Missing or changed provenance invalidates affected checks.
+2. **Fan out.** Shard all relevant user journeys into user-acceptance jobs; shard all meaningful risks and attack frames into adversarial-review jobs. Each returns one test plan for its lens, split into independent jobs.
+3. **Dispatch.** Enqueue each test as soon as its plan and inputs exist. Include acceptance, local, cross-job, and integration checks when their true dependencies are ready. Never wait for a global review report.
+4. **Collect all.** Run cases separately. Bundle only if every case reports; disable fail-fast or split. Failure is data: it MUST NOT cancel independent siblings or trigger repair. Cancel only dependency-blocked or unsafe work, with reason and evidence.
+5. **Cross-check.** After implementation terminates, enqueue remaining end-to-end journeys, whole-wave adversarial reviews, cross-job checks, and integration tests from final outputs and failures. No single reviewer is a wave-wide barrier.
+6. **Close.** Require every job terminal or justifiably cancelled, every plan exhausted, the ready queue empty, and evidence current. Merge issues from all five roles into one ledger. This is the only wave-closing barrier.
+7. **Repair once.** Any issue blocks. After closure, re-plan once from the full ledger and repair as a new wave.
+   - Re-run failed, timed-out, cancelled, or invalidated checks plus impacted cross-job, integration, and regression checks.
+   - Still impossible → record a fresh justified cancellation.
+   - Preserve only successful evidence with complete, unchanged provenance.
+8. **Advance.** No issue → verify the wave and start the next dependency-ready wave. The final wave passes through the same gate.
+
+The test: acceptance traces to user intent; both review lenses fan out early; failures never short-circuit independent tests; repair starts once from the full ledger; no issue survives the gate.
 
 ## 3. SIMPLICITY FIRST
 **Produce the minimum that solves the problem. Nothing speculative.**
