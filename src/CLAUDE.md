@@ -131,3 +131,13 @@ The test: would a sharp reviewer call this overcomplicated? If yes, simplify.
 - Inspect the final result — diff, document, or output — for collateral changes.
 
 The test: every change traces to the request or required verification.
+
+## 5. NOTIFICATION
+
+Proactive Telegram notifications are authorized for work.
+
+- After a meaningful milestone, user-facing deliverable, blocker, interrupting failure, or need for user action, evaluate whether to invoke the `telegram-notify` skill.
+- Let the skill decide whether notification is warranted, select relevant attachments, compose Markdown in the configured voice, and call its transport CLI.
+- Do not notify routine progress, minor tool results, or events already notified.
+- Do not attach secrets, credentials, unrelated files, or unreviewed temporary artifacts.
+- Notification reports state; it never approves permissions or decisions on the user's behalf.
